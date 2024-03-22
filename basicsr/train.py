@@ -24,6 +24,7 @@ from basicsr.utils import (MessageLogger, check_resume, get_env_info,
 from basicsr.utils.dist_util import get_dist_info, init_dist
 from basicsr.utils.options import dict2str, parse
 
+import copy
 
 def parse_options(is_train=True):
     parser = argparse.ArgumentParser()
@@ -45,7 +46,7 @@ def parse_options(is_train=True):
     # distributed settings
     if args.launcher == 'none':
         opt['dist'] = False
-        print('Disable distributed.', flush=True)
+        print('Disable distributed.')
     else:
         opt['dist'] = True
         if args.launcher == 'slurm' and 'dist_params' in opt:
@@ -100,7 +101,17 @@ def create_train_val_dataloader(opt, logger):
     for phase, dataset_opt in opt['datasets'].items():
         if phase == 'train':
             dataset_enlarge_ratio = dataset_opt.get('dataset_enlarge_ratio', 1)
-            train_set = create_dataset(dataset_opt)
+            if 'multi' not in dataset_opt:
+                train_set = create_dataset(dataset_opt)
+            else:
+                from torch.utils.data import ConcatDataset
+                train_set_list = []
+                for _opt in dataset_opt['multi']:
+                    dataset_opt.update(_opt)
+                    
+                    train_set = create_dataset(copy.deepcopy(dataset_opt))
+                    train_set_list.append(train_set)
+                train_set = ConcatDataset(train_set_list)
             train_sampler = EnlargedSampler(train_set, opt['world_size'],
                                             opt['rank'], dataset_enlarge_ratio)
             train_loader = create_dataloader(
