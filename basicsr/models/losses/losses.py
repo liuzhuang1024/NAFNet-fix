@@ -114,3 +114,31 @@ class PSNRLoss(nn.Module):
 
         return self.loss_weight * self.scale * torch.log(((pred - target) ** 2).mean(dim=(1, 2, 3)) + 1e-8).mean()
 
+# from piq import LPIPS
+from piq import SSIMLoss
+from piq import MultiScaleSSIMLoss
+from piqa import LPIPS
+
+class LPIPSLoss(nn.Module):
+
+    def __init__(self, loss_weight=1.0, reduction='mean'):
+        super().__init__()
+        self.loss_weight = loss_weight
+        self.reduction = reduction
+        self.lpips = LPIPS(network="vgg", reduction=reduction)
+        self.lpips.cuda()
+
+    def forward(self, pred, target):
+        return self.loss_weight * self.lpips(pred.clip(0, 1), target)
+    
+class MS_SSIMLoss(nn.Module):
+
+    def __init__(self, loss_weight=1.0, reduction='mean'):
+        super().__init__()
+        self.loss_weight = loss_weight
+        self.reduction = reduction
+        self.ms_ssim = MultiScaleSSIMLoss(reduction=reduction)
+        self.ms_ssim.cuda()
+
+    def forward(self, pred, target):
+        return self.loss_weight * self.ms_ssim(pred.clip(0, 1), target.clip(0, 1))
