@@ -18,8 +18,8 @@ datasets:
     name: gopro-test
     type: PairedImageDataset
 
-    dataroot_gt: ./datasets/GoPro/test/target.lmdb
-    dataroot_lq: ./datasets/GoPro/test/input.lmdb
+    dataroot_gt: ./remove_dataset2/gt.lmdb
+    dataroot_lq: ./remove_dataset2/lq.lmdb
 
     io_backend:
       type: lmdb
@@ -33,10 +33,27 @@ network_g:
   dec_blk_nums: [1, 1, 1, 1]
   dw_expand: 2
   ffn_expand: 2
+  train_size: [1, 3, 448, 448]
 
 # path
 path:
-  pretrain_network_g: experiments/pretrained_models/Baseline-GoPro-width64.pth
+  # pretrain_network_g: experiments/Baseline-GoPro-width64/models/net_g_25000.pth
+  # pretrain_network_g: experiments/Baseline-GoPro-width64-remove/models/net_g_latest.pth
+  # pretrain_network_g: experiments/Baseline-GoPro-width64-flare/models/net_g_latest.pth
+  # pretrain_network_g: experiments/Baseline-GoPro-width64/models/net_g_290000.pth
+  # pretrain_network_g: experiments/Baseline-GoPro-width64-flare-fix/models/net_g_latest.pth
+  # pretrain_network_g: experiments/Baseline-GoPro-width64/models/net_g_latest.pth
+  # pretrain_network_g: experiments/Baseline-GoPro-width64-remove-2/models/net_g_latest.pth
+  # pretrain_network_g: experiments/Baseline-GoPro-width64-flare-fix-all-loss/models/net_g_latest.pth
+  # pretrain_network_g: experiments/Baseline-GoPro-width64-remove-3-ssim/models/net_g_latest.pth
+  # pretrain_network_g: experiments/Baseline-GoPro-width64-remove-4-ssim-contentloss/models/net_g_latest.pth
+  # pretrain_network_g: experiments/Baseline-GoPro-width64-remove-4-ssim-content-fft-10W/models/net_g_latest.pth
+  # pretrain_network_g: experiments/Baseline-GoPro-width64-remove-4-ssim-content-scale-10W/models/net_g_latest.pth
+  # pretrain_network_g: experiments/Baseline-GoPro-width64-remove-4-ssim-10W/models/net_g_latest.pth
+  # pretrain_network_g: experiments/Baseline-GoPro-width64-remove-4-ssim-content-fft-scale-10W-ft/models/net_g_latest.pth
+  # pretrain_network_g: experiments/Baseline-GoPro-width64-remove-4-ssim-content-scale-20W-fix/models/net_g_latest.pth
+  pretrain_network_g: experiments/Baseline-GoPro-width64-remove-4-ssim-content-scale-30W-ft/models/net_g_255000.pth
+  # strict_load_g: true
   strict_load_g: true
   resume_state: ~
 

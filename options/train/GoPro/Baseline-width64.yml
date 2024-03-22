@@ -5,7 +5,7 @@
 # Copyright 2018-2020 BasicSR Authors
 # ------------------------------------------------------------------------
 # general settings
-name: Baseline-GoPro-width64
+name: Baseline-GoPro-width64-remove-4-ssim-content-scale-20W-fix
 model_type: ImageRestorationModel
 scale: 1
 num_gpu: 8
@@ -13,16 +13,18 @@ manual_seed: 10
 
 datasets:
   train:
-    name: gopro-train
-    type: PairedImageDataset
-    dataroot_gt: ./datasets/GoPro/train/sharp_crops.lmdb
-    dataroot_lq: ./datasets/GoPro/train/blur_crops.lmdb
+    name: &datasetname gopro-train 
+    multi:
+    -   
+      type: PairedImageDataset
+      dataroot_gt: ./remove_dataset_768/gt.lmdb
+      dataroot_lq: ./remove_dataset_768/lq.lmdb
 
     filename_tmpl: '{}'
     io_backend:
       type: lmdb
 
-    gt_size: 256
+    gt_size: 448
     use_flip: true
     use_rot: true
 
@@ -36,52 +38,79 @@ datasets:
   val:
     name: gopro-test
     type: PairedImageDataset
-    dataroot_gt: ./datasets/GoPro/test/target.lmdb
-    dataroot_lq: ./datasets/GoPro/test/input.lmdb
+    dataroot_gt: ./remove_dataset3/gt.lmdb
+    dataroot_lq: ./remove_dataset3/lq.lmdb
     io_backend:
       type: lmdb
 
 
 network_g:
-  type: BaselineLocal
+  # type: BaselineLocal
+  type: Baseline
   width: 64
   enc_blk_nums: [1, 1, 1, 28]
   middle_blk_num: 1
   dec_blk_nums: [1, 1, 1, 1]
   dw_expand: 2
   ffn_expand: 2
+  train_size: [1, 3, 448, 448]
 
 # path
 path:
-  pretrain_network_g: ~
+  # pretrain_network_g: experiments/Baseline-GoPro-width64-remove-3-ssim/models/net_g_latest.pth
+  # pretrain_network_g: experiments/Baseline-GoPro-width64-remove-4-ssim-contentloss/models/net_g_latest.pth
+  # pretrain_network_g: experiments/Baseline-GoPro-width64-remove-4-ssim-contentloss/models/net_g_latest.pth
+  # pretrain_network_g: experiments/Baseline-GoPro-width64-remove-4-ssim-content-scale-10W/models/net_g_latest.pth
+  pretrain_network_g: experiments/Baseline-GoPro-width64-remove-4-ssim-content-fft-scale-10W-ft/models/net_g_latest.pth
   strict_load_g: true
   resume_state: ~
 
 # training settings
+
 train:
+  total_iter: &total_step 200000
+
   optim_g:
     type: AdamW
     lr: !!float 1e-3
-    weight_decay: 0.
-    betas: [0.9, 0.9]
+    weight_decay: !!float 1e-3
+    betas: [0.9, 0.95]
 
   scheduler:
     type: TrueCosineAnnealingLR
-    T_max: 400000
-    eta_min: !!float 1e-7
+    T_max: *total_step
+    eta_min: !!float 1e-8
 
-  total_iter: 400000
   warmup_iter: -1 # no warm up
 
   # losses
   pixel_opt:
-    type: PSNRLoss
-    loss_weight: 1
-    reduction: mean
+    type: ConcatLoss
+    name:
+    -
+      # type: L1Loss
+      # type: LPIPSLoss
+      type: MS_SSIMLoss
+      loss_weight: 1.
+      reduction: mean
+    - 
+      type: L1Loss
+      # type: LPIPSLoss
+      # type: PSNRLoss
+      loss_weight: 1.
+      reduction: mean
+    - 
+      type: PerceptualLoss
+      loss_weight: 0.1
+      reduction: mean
+    # - 
+    #   type: FFTloss
+    #   loss_weight: 0.01
+    #   reduction: mean
 
 # validation settings
 val:
-  val_freq: !!float 2e4
+  val_freq: !!float 2e5
   save_img: false
 
 
@@ -97,7 +126,7 @@ val:
 
 # logging settings
 logger:
-  print_freq: 200
+  print_freq: 20
   save_checkpoint_freq: !!float 5e3
   use_tb_logger: true
   wandb:
